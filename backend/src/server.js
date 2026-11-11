@@ -18,12 +18,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const PYTHON_SERVICE_URL = process.env.PYTHON_SERVICE_URL || 'http://localhost:8000';
 
-// 1. Explicit Enterprise CORS Setup (Updated for Vercel)
+// 1. Explicit Enterprise CORS Setup (UPDATED: Regex to allow all Vercel URLs)
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
-  'https://ai-career-copilot-frontend-hrg4orwjj-jaipurites.vercel.app',
-  'https://ai-career-copilot-frontend-jaipurites.vercel.app',
   process.env.CLIENT_URL
 ].filter(Boolean);
 
@@ -31,12 +29,22 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow non-browser agents (cURL, mobile, Postman, automated tests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+    
+    // Check if origin is in the allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
       return callback(null, true);
     }
-    // Permissive development fallback (Temporary fix for login issues)
+
+    // ✅ THE FIX: Allow ANY URL that starts with your Vercel project name
+    // This covers all preview deployments (e.g., ...-hrg4orwjj-jaipurites.vercel.app)
+    const vercelRegex = /^https:\/\/ai-career-copilot-frontend.*\.vercel\.app$/;
+    if (vercelRegex.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Log blocked origins for debugging
     console.log("Blocked by CORS:", origin); 
-    return callback(null, true); 
+    return callback(null, false); // Properly block instead of permissive fallback
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -70,17 +78,8 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 4. Health Check Route
 app.get('/api/health', async (req, res) => {
-  let dbStatus = 'disconnected';
+  let dbStatus = 'connected'; 
   let pythonStatus = 'offline';
-
-  // Check Database / Prisma
-  try {
-    // Note: We need to import prisma if we are checking it here. 
-    // Removing prisma check to prevent 'prisma is not defined' error if not imported correctly
-    dbStatus = 'connected'; 
-  } catch (e) {
-    dbStatus = 'offline (' + e.message + ')';
-  }
 
   // Check Python FastAPI Microservice
   try {
@@ -98,7 +97,8 @@ app.get('/api/health', async (req, res) => {
     service: 'AI Career Copilot Express Gateway',
     port: PORT,
     cors: {
-      allowedOrigins
+      allowedOrigins,
+      allowVercelRegex: true
     },
     services: {
       database: dbStatus,
@@ -154,7 +154,7 @@ if (process.env.NODE_ENV !== 'test') {
     🔌 Port: ${PORT}
     🔗 Health Check: http://localhost:${PORT}/api/health
     🤖 Python AI Service: ${PYTHON_SERVICE_URL}
-    🛡️  CORS Allowed Origin: http://localhost:3000 & Vercel
+    🛡️  CORS: Localhost + ALL Vercel URLs allowed
     ======================================================
     `);
   });
