@@ -1,0 +1,30 @@
+{
+  "languages": [
+    "Python", "TypeScript", "JavaScript", "Go", "Golang", "Rust", "C++", "C", "C#",
+    "Java", "Kotlin", "Swift", "Scala", "Ruby", "PHP", "SQL", "R", "Dart", "Bash", "Shell"
+  ],
+  "frameworks": [
+    "React", "React.js", "Next.js", "Node.js", "Express", "Express.js", "FastAPI",
+    "Django", "Flask", "Spring Boot", "NestJS", "Vue", "Vue.js", "Angular", "Svelte",
+    "Tailwind CSS", "Bootstrap", "Redux", "GraphQL", "REST APIs", "gRPC"
+  ],
+  "cloud_devops": [
+    "Docker", "Kubernetes", "AWS", "Amazon Web Services", "EC2", "S3", "AWS Lambda",
+    "Google Cloud Platform", "GCP", "Microsoft Azure", "Terraform", "CI/CD",
+    "GitHub Actions", "GitLab CI", "Jenkins", "Linux", "Git", "Nginx", "Prometheus", "Grafana"
+  ],
+  "databases": [
+    "PostgreSQL", "Postgres", "MySQL", "MongoDB", "Redis", "SQLite", "DynamoDB",
+    "Cassandra", "Elasticsearch", "Prisma", "TypeORM", "Mongoose", "Supabase"
+  ],
+  "ai_data": [
+    "scikit-learn", "sklearn", "PyTorch", "TensorFlow", "Pandas", "NumPy", "Keras",
+    "TF-IDF", "Vector Databases", "ChromaDB", "Pinecone", "LangChain", "OpenAI API",
+    "Hugging Face", "Computer Vision", "NLP", "Natural Language Processing", "BERT", "LLM"
+  ],
+  "architecture_tools": [
+    "Microservices", "System Design", "Distributed Systems", "Object-Oriented Programming",
+    "OOP", "Design Patterns", "Kafka", "RabbitMQ", "WebSockets", "Jest", "Cypress",
+    "Pytest", "Postman", "Figma", "Jira", "Agile", "Scrum"
+  ]
+}
