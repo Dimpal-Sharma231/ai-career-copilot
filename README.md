@@ -64,6 +64,8 @@ cd frontend
 npm run dev
 ```
 - Web Application: [http://localhost:3000](http://localhost:3000)
+## SCREENSHOTS:
+<img width="1685" height="946" alt="image" src="https://github.com/user-attachments/assets/0d42e3f9-f2b3-490b-b60a-8ed9fb3f680e" />
 
 ---
 
