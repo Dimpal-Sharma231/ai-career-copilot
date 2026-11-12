@@ -107,16 +107,32 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// 5. API Routes Mounting
+// 5. API Routes Mounting (dual-mounted under both /api/* and /* for gateway & client compatibility)
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/users', userRoutes);
+app.use('/users', userRoutes);
+
 app.use('/api/resume', resumeRoutes);
+app.use('/resume', resumeRoutes);
+
 app.use('/api/jobs', jobsRoutes);
+app.use('/jobs', jobsRoutes);
+
 app.use('/api/applications', applicationsRoutes);
+app.use('/applications', applicationsRoutes);
+
 app.use('/api/analytics', analyticsRoutes);
+app.use('/analytics', analyticsRoutes);
+
 app.use('/api/interview', interviewRoutes);
+app.use('/interview', interviewRoutes);
+
 app.use('/api/drives', drivesRoutes);
+app.use('/drives', drivesRoutes);
 
 // Root Fallback
 app.get('/', (req, res) => {
