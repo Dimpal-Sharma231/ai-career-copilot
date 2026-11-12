@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { 
   register, 
   login, 
+  googleAuth,
   getProfile, 
   updateOnboarding, 
   updateDsaStats 
@@ -13,6 +14,7 @@ const router = Router();
 // Public Authentication endpoints
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google', googleAuth);
 
 // Protected endpoints
 router.get('/me', authenticateToken, getProfile);

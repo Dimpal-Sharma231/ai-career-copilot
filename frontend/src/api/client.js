@@ -80,6 +80,28 @@ export const apiClient = {
   },
 
   /**
+   * Google OAuth Sign-In / Sign-Up
+   */
+  async googleAuth(googleData) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(googleData),
+        signal: AbortSignal.timeout(10000)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Google authentication failed');
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  },
+
+  /**
    * Get Current Authenticated Profile
    */
   async getProfile() {

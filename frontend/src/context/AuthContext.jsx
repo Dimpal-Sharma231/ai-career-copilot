@@ -54,6 +54,17 @@ export const AuthProvider = ({ children }) => {
     return res.data.user;
   };
 
+  const loginWithGoogle = async (googleData) => {
+    const res = await apiClient.googleAuth(googleData);
+    if (!res.success) {
+      throw new Error(res.error || 'Google Sign-In failed');
+    }
+    localStorage.setItem('copilot_token', res.data.token);
+    setToken(res.data.token);
+    setUser(res.data.user);
+    return res.data.user;
+  };
+
   const logout = () => {
     localStorage.removeItem('copilot_token');
     setToken(null);
@@ -107,6 +118,7 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!user,
       login,
       register,
+      loginWithGoogle,
       logout,
       updateProfile,
       updateOnboarding,

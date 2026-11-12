@@ -39,8 +39,9 @@ export const register = async (req, res) => {
     }
 
     // Check if user already exists
+    const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: normalizedEmail }
     });
 
     if (existingUser) {
@@ -57,9 +58,11 @@ export const register = async (req, res) => {
     // Create new student user with empty initial placement data
     const newUser = await prisma.user.create({
       data: {
-        name,
-        email: email.toLowerCase(),
+        name: name.trim(),
+        email: normalizedEmail,
         password: hashedPassword,
+        avatarUrl: '',
+        provider: 'local',
         college: '',
         graduationYear: '2026',
         targetRole: 'Software Development Engineer (SDE)',
@@ -78,6 +81,8 @@ export const register = async (req, res) => {
         id: true,
         name: true,
         email: true,
+        avatarUrl: true,
+        provider: true,
         college: true,
         graduationYear: true,
         targetRole: true,
@@ -132,8 +137,10 @@ export const login = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
       include: {
         _count: {
           select: { resumes: true }
@@ -145,6 +152,14 @@ export const login = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.'
+      });
+    }
+
+    // Check if account was created exclusively with Google OAuth
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: 'This account was created with Google Sign-In. Please click "Continue with Google".'
       });
     }
 
@@ -162,7 +177,7 @@ export const login = async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
 
-    const hasResume = user._count?.resumes > 0;
+    const hasResume = (user._count?.resumes || 0) > 0;
     const computedStrength = calculateProfileStrength(user, hasResume);
 
     return res.status(200).json({
@@ -173,6 +188,8 @@ export const login = async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        avatarUrl: user.avatarUrl || '',
+        provider: user.provider || 'local',
         college: user.college,
         graduationYear: user.graduationYear,
         targetRole: user.targetRole,
@@ -193,7 +210,128 @@ export const login = async (req, res) => {
     console.error('Login Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error during login: ' + error.message
+      message: 'Database/Server error during login: ' + error.message
+    });
+  }
+};
+
+/**
+ * Sign in or Sign up via Google OAuth
+ * Route: POST /api/auth/google
+ */
+export const googleAuth = async (req, res) => {
+  try {
+    const { email, name, avatarUrl } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google authentication requires a verified email address.'
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const displayName = (name && name.trim()) || normalizedEmail.split('@')[0];
+
+    // Find existing user by email
+    let user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: {
+        _count: {
+          select: { resumes: true }
+        }
+      }
+    });
+
+    if (!user) {
+      // Create new student user with Google profile info
+      user = await prisma.user.create({
+        data: {
+          name: displayName,
+          email: normalizedEmail,
+          password: null, // OAuth account
+          avatarUrl: avatarUrl || '',
+          provider: 'google',
+          college: '',
+          graduationYear: '2026',
+          targetRole: 'Software Development Engineer (SDE)',
+          targetCompanies: 'Zomato, Swiggy, Razorpay, Flipkart',
+          leetcodeUrl: '',
+          githubUrl: '',
+          resumeSkills: '[]',
+          dsaStreak: 0,
+          dsaSolved: 0,
+          dsaTarget: 191,
+          striverSolved: 0,
+          onboardingCompleted: false,
+          profileStrength: 20
+        },
+        include: {
+          _count: {
+            select: { resumes: true }
+          }
+        }
+      });
+    } else {
+      // Update avatar / provider if missing
+      const shouldUpdate = (!user.avatarUrl && avatarUrl) || (user.provider !== 'google' && !user.provider);
+      if (shouldUpdate) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            ...(avatarUrl && { avatarUrl }),
+            provider: user.provider || 'google'
+          },
+          include: {
+            _count: {
+              select: { resumes: true }
+            }
+          }
+        });
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    const hasResume = (user._count?.resumes || 0) > 0;
+    const computedStrength = calculateProfileStrength(user, hasResume);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Google Sign-In successful.',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl || avatarUrl || '',
+        provider: user.provider || 'google',
+        college: user.college,
+        graduationYear: user.graduationYear,
+        targetRole: user.targetRole,
+        targetCompanies: user.targetCompanies,
+        leetcodeUrl: user.leetcodeUrl,
+        githubUrl: user.githubUrl,
+        resumeSkills: user.resumeSkills,
+        dsaStreak: user.dsaStreak,
+        dsaSolved: user.dsaSolved,
+        dsaTarget: user.dsaTarget,
+        striverSolved: user.striverSolved,
+        profileStrength: computedStrength,
+        onboardingCompleted: user.onboardingCompleted,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error during Google Sign-In: ' + error.message
     });
   }
 };
